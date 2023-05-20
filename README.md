@@ -26,4 +26,4 @@ No presente trabalho, o Arduino emissor será responsável por receber um caract
 
 ## Vídeo de Apresentação
 
-O vídeo de apresentação do projeto se encontra neste [LINK]().
+Confira o vídeo de apresentação do projeto  [Aqui]().

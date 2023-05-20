@@ -1,6 +1,6 @@
 #define TX_PIN 13
 #define RTS_PIN 12
-#define CTS_PIN 11
+#define PINO_CTS 11
 #define BAUD_RATE 1
 #define HALF_BAUD 1 / (2 * BAUD_RATE)
 
@@ -43,13 +43,13 @@ void stopTimer()
 }
 
 // Get parity bit
-bool getParityBit(const char *dado){
+bool getParityBit(char c){
   int parity = 0;
   int numOnes = 0;
 
   // Count the number of ones in the character's bits
   for (int i = 0; i < 8; i++) {
-    if ((bit >> i) & 1) {
+    if ((c >> i) & 1) {
       numOnes++;
     }
   }
@@ -80,7 +80,7 @@ volatile int transmittingCharCurrentBit = 0;
 
 // Rotina de interrupcao do timer1
 ISR(TIMER1_COMPA_vect) {
-    transmittingChar();
+    transmitChar();
 }
 
 // Executada uma vez quando o Arduino reseta
@@ -93,7 +93,7 @@ void setup()
     // Inicializa TX ou RX
     pinMode(TX_PIN, OUTPUT);
     pinMode(RTS_PIN, OUTPUT);
-    pinMode(CTS_PIN, INPUT);
+    pinMode(PINO_CTS, INPUT);
     // Configura timer
     configuraTemporizador(BAUD_RATE);
     // habilita interrupcoes
@@ -106,7 +106,8 @@ void transmitChar() {
         case Start:
             startTimer();
 
-            Serial.println("Transmiting char: " + transmitingChar);
+            Serial.print("Transmiting char: ");
+            Serial.println(transmittingChar);
 
             digitalWrite(TX_PIN, LOW);
             
@@ -128,8 +129,7 @@ void transmitChar() {
 
             // When we finish transmitting our current char, transmit a parity bit
             if (transmittingCharCurrentBit == 7)
-                parityBit = getParityBit(const char *dado)
-                digitalWrite(TX_PIN, parityBit);
+                digitalWrite(TX_PIN, getParityBit(transmittingChar));
                 currentState++;
 
             return;
@@ -151,16 +151,16 @@ void loop() {
       // Wait for a message to be typed
     }
 
-    msg = Serial.readString();
-    Serial.println(msg);
+    message = Serial.readString();
+    Serial.println(message);
 
-    for (int i = 0; i < msg.length() - 1; i++) {
-        transmittingChar = msg.charAt(i);
+    for (int i = 0; i < message.length() - 1; i++) {
+        transmittingChar = message.charAt(i);
 
         // Indicate the intetion to transmit through RTS
         digitalWrite(RTS_PIN, HIGH);
 
-        while (digitalRead(CTS_PIN) == LOW) {
+        while (digitalRead(PINO_CTS) == LOW) {
           // Wait for Cleat-to-Send signal from receiver
         }
 

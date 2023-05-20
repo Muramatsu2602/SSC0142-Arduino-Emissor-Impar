@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O objetivo deste projeto consiste em estabelecer uma comunicação síncrona entre duas plataformas Arduino. A transmissão da mensagem será realizada de forma serial e síncrona.
+🇧🇷:O objetivo deste projeto consiste em estabelecer uma comunicação síncrona entre duas plataformas Arduino. A transmissão da mensagem será realizada de forma serial e síncrona.
 
 🇺🇸: The aim of this project is to achieve synchronous communication between two Arduino platforms. The message will be transmitted in a serial and synchronous manner. 
 
@@ -26,4 +26,4 @@ No presente trabalho, o Arduino emissor será responsável por receber um caract
 
 ## Vídeo de Apresentação
 
-O vídeo de apresentação do projeto se encontra neste [LINK]().
+Confira o vídeo de apresentação do projeto  [Aqui]().

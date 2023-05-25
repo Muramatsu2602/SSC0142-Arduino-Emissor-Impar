@@ -1,19 +1,19 @@
 #define TX_PIN 13
 #define RTS_PIN 12
-#define PINO_CTS 11
+#define CTS_PIN 11
 #define BAUD_RATE 1
 #define HALF_BAUD 1 / (2 * BAUD_RATE)
 
-void configuraTemporizador(int baud_rate)
+void configureTimer(int baud_rate)
 {
-    int frequencia;
-    frequencia = constrain(baud_rate, 1, 1500);
+    int frequency;
+    frequency = constrain(baud_rate, 1, 1500);
     // set timer1 interrupt
     TCCR1A = 0; // set entire TCCR1A register to 0
     TCCR1B = 0; // same for TCCR1B
     TCNT1 = 0;  // initialize counter value to 0
     // OCR1A = contador;// = (16*10^6) / (10*1024) - 1 (must be <65536)
-    OCR1A = ((16 * pow(10, 6)) / (1024 * frequencia)) - 1;
+    OCR1A = ((16 * pow(10, 6)) / (1024 * frequency)) - 1;
     // turn on CTC mode (clear time on compare)
     TCCR1B |= (1 << WGM12);
     // Turn T1 off
@@ -44,39 +44,29 @@ void stopTimer()
 
 // Get parity bit
 bool getParityBit(char c){
-  int parity = 0;
-  int numOnes = 0;
+    int parity = 0;
+    int numOnes = 0;
 
-  // Count the number of ones in the character's bits
-  for (int i = 0; i < 8; i++) {
-    if ((c >> i) & 1) {
-      numOnes++;
+    // Count the number of ones in the character's bits
+    for (int i = 0; i < 8; i++) {
+      if ((c >> i) & 1) {
+        numOnes++;
+      }
     }
-  }
 
-  // Calculate the parity bit based on the number of ones
-  if (numOnes % 2 == 0) {
-    return 0;  // Even parity
-  } else {
-    return 1;  // Odd parity
-  }
+    // Calculate the parity bit based on the number of ones
+    if (numOnes % 2 == 0) {
+      return 0;  // Even parity
+    } else {
+      return 1;  // Odd parity
+    }
 
-  return parity;
+    return parity;
 }
-
-
-///////// COMEÇA
-enum STATES {
-    Start = 0,
-    Transmitting = 1,
-    Finish = 3
-};
 
 String message = "";
 volatile boolean transmitting = false;
-volatile int currentState = 0;
 volatile char transmittingChar = 0;
-volatile int transmittingCharCurrentBit = 0;
 
 // Rotina de interrupcao do timer1
 ISR(TIMER1_COMPA_vect) {
@@ -93,55 +83,45 @@ void setup()
     // Inicializa TX ou RX
     pinMode(TX_PIN, OUTPUT);
     pinMode(RTS_PIN, OUTPUT);
-    pinMode(PINO_CTS, INPUT);
+    pinMode(CTS_PIN, INPUT);
     // Configura timer
-    configuraTemporizador(BAUD_RATE);
+    configureTimer(BAUD_RATE);
     // habilita interrupcoes
     interrupts();
 }
 
 
 void transmitChar() {
-    switch (currentState) {
-        case Start:
-            startTimer();
+    startTimer();
+    transmitting = true;
 
-            Serial.print("Transmiting char: ");
-            Serial.println(transmittingChar);
+    Serial.print("Transmiting char: ");
+    Serial.println(transmittingChar);
 
-            digitalWrite(TX_PIN, LOW);
-            
-            Serial.println("0");
+    digitalWrite(TX_PIN, LOW);
+    Serial.println("0");
 
-            currentState++;  // Move to next state (Data transmission)
+    Serial.println("Transmitting...");
 
-            return;
+    for (int i = 0; i < 8; i++) {
+        bool bit = (transmittingChar >> i) & 1;
 
-        case Transmitting:
-            // Get the next bit to be transmitted
-            boolean bit = bitRead(transmittingChar, transmittingCharCurrentBit);
-
-            // Transmit bit
-            digitalWrite(TX_PIN, bit);
-            Serial.println(bit);
-
-            transmittingCharCurrentBit++;
-
-            // When we finish transmitting our current char, transmit a parity bit
-            if (transmittingCharCurrentBit == 7)
-                digitalWrite(TX_PIN, getParityBit(transmittingChar));
-                currentState++;
-
-            return;
-
-        case Finish:
-        {
-            transmittingCharCurrentBit = 0;
-            currentState = 0;
-            transmitting = false;
-            return;
-        }
+        // Transmit bit
+        digitalWrite(TX_PIN, bit);
+        Serial.println(bit);
     }
+
+    // When we finish transmitting our current char, transmit a parity bit
+    boolean pb = getParityBit(transmittingChar);
+    digitalWrite(TX_PIN, pb);
+    Serial.println(pb);
+
+    Serial.println("Finishing...");
+    digitalWrite(TX_PIN, HIGH);
+    digitalWrite(TX_PIN, HIGH);
+    Serial.println("1\n1");
+    transmitting = false;
+    return;
 }
 
 void loop() {
@@ -160,7 +140,7 @@ void loop() {
         // Indicate the intetion to transmit through RTS
         digitalWrite(RTS_PIN, HIGH);
 
-        while (digitalRead(PINO_CTS) == LOW) {
+        while (digitalRead(CTS_PIN) == LOW) {
           // Wait for Cleat-to-Send signal from receiver
         }
 
